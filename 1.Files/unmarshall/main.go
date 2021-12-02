@@ -34,14 +34,14 @@ type Social struct {
 func PrintUser(u *User) {
 	fmt.Printf("Name: %s\n", u.Name)
 	fmt.Printf("Type: %s\n", u.Type)
-	fmt.Printf("Age: %d\n", u.Age)
+	fmt.Printf( "Age: %d\n", u.Age)
 	fmt.Printf("Social. VK: %s and FB: %s\n", u.Social.Vkontakte, u.Social.Facebook)
 }
 
 //1. Рассмотрим процесс десериализации (то есть когда из последовательности в объект)
 func main() {
 	//1. Создадим файл дескриптор
-	jsonFile, err := os.Open("users.json")
+	jsonFile, err := os.Open("1.Files/unmarshall/users.json")
 	if err != nil {
 		log.Fatal(err)
 	}

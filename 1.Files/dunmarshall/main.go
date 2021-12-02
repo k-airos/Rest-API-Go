@@ -10,7 +10,7 @@ import (
 
 func main() {
 	//1. Создадим файл дескриптор
-	jsonFile, err := os.Open("users.json")
+	jsonFile, err := os.Open("1.Files/dunmarshall/users.json")
 	if err != nil {
 		log.Fatal(err)
 	}
