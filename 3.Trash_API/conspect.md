@@ -75,7 +75,7 @@ func main() {
 	//2. Если на вход пришел запрос вида /pizza/{id}
 	router.HandleFunc("/pizza/{id}", GetPizzaById).Methods("GET")
 	log.Println("Router configured successfully! Let's go!")
-	log.Fatal(http.ListenAndServe(":"+port, nil))
+	log.Fatal(http.ListenAndServe(":"+port, router))
 }
 
 ```
