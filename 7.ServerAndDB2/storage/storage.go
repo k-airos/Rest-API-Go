@@ -48,10 +48,10 @@ func (s *Storage) Article() *ArticleRepository {
 	if s.articleRepository != nil {
 		return s.articleRepository
 	}
-	s.userRepository = &UserRepository{
+	s.articleRepository = &ArticleRepository{
 		storage: s,
 	}
-	return nil
+	return s.articleRepository
 }
 
 //Public repo for User
@@ -62,5 +62,5 @@ func (s *Storage) User() *UserRepository {
 	s.userRepository = &UserRepository{
 		storage: s,
 	}
-	return nil
+	return s.userRepository
 }

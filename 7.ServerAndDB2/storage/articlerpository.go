@@ -32,7 +32,7 @@ func (ar *ArticleRepository) DeleteByID(id int) (*models.Article, error) {
 	}
 	if ok {
 		query := fmt.Sprintf("DELETE FROM %s WHERE id=$1", tableArticle)
-		_, err := ar.storage.db.Exec(query)
+		_, err := ar.storage.db.Exec(query, id)
 		if err != nil {
 			return nil, err
 		}

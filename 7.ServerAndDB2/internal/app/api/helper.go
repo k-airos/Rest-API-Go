@@ -25,7 +25,7 @@ func (a *API) configureRouterField() {
 	a.router.HandleFunc(prefix+"/articles", a.GetAllArticles).Methods("GET")
 	a.router.HandleFunc(prefix+"/articles/{id}", a.GetArticleByID).Methods("GET")
 	a.router.HandleFunc(prefix+"/articles/{id}", a.DeleteArticleByID).Methods("DELETE")
-	a.router.HandleFunc(prefix+"/articles/{id}", a.PostArticle).Methods("POST")
+	a.router.HandleFunc(prefix+"/articles", a.PostArticle).Methods("POST")
 	a.router.HandleFunc(prefix+"/user/register", a.PostUserRegister).Methods("POST")
 }
 
