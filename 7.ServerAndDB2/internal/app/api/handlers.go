@@ -3,14 +3,17 @@ package api
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/form3tech-oss/jwt-go"
 	"github.com/gorilla/mux"
+	"github.com/k-airos/7.ServerAndDB2/internal/app/middleware"
 	"github.com/k-airos/7.ServerAndDB2/internal/app/models"
 	"net/http"
 	"strconv"
+	"time"
 )
 
-// Messagge Вспомогательная структура для формирования сообщений
-type Messagge struct {
+// Message Вспомогательная структура для формирования сообщений
+type Message struct {
 	StatusCode int    `json:"status_code"`
 	Message    string `json:"message"`
 	IsError    bool   `json:"is_error"`
@@ -32,7 +35,7 @@ func (api *API) GetAllArticles(writer http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		//Что делаем, если была ошибка на этапе подключения?
 		api.logger.Info("Error while Articles.SelectAll: ", err)
-		msg := Messagge{
+		msg := Message{
 			StatusCode: 501,
 			Message:    "We have some troubles to accessing database. Try again later",
 			IsError:    true,
@@ -51,7 +54,7 @@ func (api *API) GetArticleByID(writer http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
 		api.logger.Info("Troubles while parsing {id} param", err)
-		msg := Messagge{
+		msg := Message{
 			StatusCode: 400,
 			Message:    "Unapropriate id value. Don't use ID as uncasting to int value",
 			IsError:    true,
@@ -63,7 +66,7 @@ func (api *API) GetArticleByID(writer http.ResponseWriter, r *http.Request) {
 	article, ok, err := api.storage.Article().FindArticleById(id)
 	if err != nil {
 		api.logger.Info("Troubles while accessing database table (articles) with id, err", err)
-		msg := Messagge{
+		msg := Message{
 			StatusCode: 500,
 			Message:    "We have some troubles to accessing database. Try later",
 			IsError:    true,
@@ -74,7 +77,7 @@ func (api *API) GetArticleByID(writer http.ResponseWriter, r *http.Request) {
 	}
 	if !ok {
 		api.logger.Info("Can not find article with that ID in database")
-		msg := Messagge{
+		msg := Message{
 			StatusCode: 404,
 			Message:    "Article with this id does't exist in database.",
 			IsError:    true,
@@ -91,7 +94,7 @@ func (api *API) DeleteArticleByID(writer http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(mux.Vars(r)["id"])
 	if err != nil {
 		api.logger.Info("Troubles while parsing {id} param", err)
-		msg := Messagge{
+		msg := Message{
 			StatusCode: 400,
 			Message:    "Unapropriate id value. Don't use ID as uncasting to int value",
 			IsError:    true,
@@ -103,7 +106,7 @@ func (api *API) DeleteArticleByID(writer http.ResponseWriter, r *http.Request) {
 	_, ok, err := api.storage.Article().FindArticleById(id)
 	if err != nil {
 		api.logger.Info("Troubles while accessing database table (articles) with id, err", err)
-		msg := Messagge{
+		msg := Message{
 			StatusCode: 500,
 			Message:    "We have some troubles to accessing database. Try later",
 			IsError:    true,
@@ -114,7 +117,7 @@ func (api *API) DeleteArticleByID(writer http.ResponseWriter, r *http.Request) {
 	}
 	if !ok {
 		api.logger.Info("Can not find article with that ID in database")
-		msg := Messagge{
+		msg := Message{
 			StatusCode: 404,
 			Message:    "Article with this id doesn't exist in database.",
 			IsError:    true,
@@ -127,7 +130,7 @@ func (api *API) DeleteArticleByID(writer http.ResponseWriter, r *http.Request) {
 	_, err = api.storage.Article().DeleteByID(id)
 	if err != nil {
 		api.logger.Info("Troubles while deleting database table (articles) with id. err:", err)
-		msg := Messagge{
+		msg := Message{
 			StatusCode: 501,
 			Message:    "We have some troubles to accessing database. Try again",
 			IsError:    true,
@@ -137,7 +140,7 @@ func (api *API) DeleteArticleByID(writer http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writer.WriteHeader(202)
-	msg := Messagge{
+	msg := Message{
 		StatusCode: 202,
 		Message:    fmt.Sprintf("Acticle with ID %d successfully deleted.", id),
 		IsError:    false,
@@ -151,7 +154,7 @@ func (api *API) PostArticle(writer http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&article)
 	if err != nil {
 		api.logger.Info("Invalid json received from client")
-		msg := Messagge{
+		msg := Message{
 			StatusCode: 400,
 			Message:    "Provided json is invalid",
 			IsError:    true,
@@ -163,7 +166,7 @@ func (api *API) PostArticle(writer http.ResponseWriter, r *http.Request) {
 	a, err := api.storage.Article().Create(&article)
 	if err != nil {
 		api.logger.Info("Troubles while creating new article: ", err)
-		msg := Messagge{
+		msg := Message{
 			StatusCode: 501,
 			Message:    "We have some troubles to accessing database. Try again",
 			IsError:    true,
@@ -181,7 +184,7 @@ func (api *API) PostUserRegister(writer http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
 		api.logger.Info("Invalid json received from client")
-		msg := Messagge{
+		msg := Message{
 			StatusCode: 400,
 			Message:    "Provided json is invalid",
 			IsError:    true,
@@ -194,7 +197,7 @@ func (api *API) PostUserRegister(writer http.ResponseWriter, r *http.Request) {
 	_, ok, err := api.storage.User().FindByLogin(user.Login)
 	if err != nil {
 		api.logger.Info("Troubles while accessing database table (users) with id, err", err)
-		msg := Messagge{
+		msg := Message{
 			StatusCode: 500,
 			Message:    "We have some troubles to accessing database. Try later",
 			IsError:    true,
@@ -205,7 +208,7 @@ func (api *API) PostUserRegister(writer http.ResponseWriter, r *http.Request) {
 	}
 	if ok {
 		api.logger.Info("User with this ID already exists")
-		msg := Messagge{
+		msg := Message{
 			StatusCode: 400,
 			Message:    "User with this ID already exists",
 			IsError:    true,
@@ -218,7 +221,7 @@ func (api *API) PostUserRegister(writer http.ResponseWriter, r *http.Request) {
 	userAdded, err := api.storage.User().Create(&user)
 	if err != nil {
 		api.logger.Info("Troubles while accessing database table (users) with id, err", err)
-		msg := Messagge{
+		msg := Message{
 			StatusCode: 500,
 			Message:    "We have some troubles to accessing database. Try later",
 			IsError:    true,
@@ -227,9 +230,94 @@ func (api *API) PostUserRegister(writer http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(writer).Encode(msg)
 		return
 	}
-	msg := Messagge{
+	msg := Message{
 		StatusCode: 201,
 		Message:    fmt.Sprintf("User {login: %s} successfully registred!", userAdded.Login),
+		IsError:    false,
+	}
+	writer.WriteHeader(201)
+	json.NewEncoder(writer).Encode(msg)
+}
+
+func (a *API) PostToAuth(writer http.ResponseWriter, r *http.Request) {
+	initHeaders(writer)
+	a.logger.Info("Post to Auth POST /api/v1/user/auth")
+	var userFromJSON models.User
+	//Обрабатывается случай, когда json - вовсе не json или в нем какие-то проблемы
+	if err := json.NewDecoder(r.Body).Decode(&userFromJSON); err != nil {
+		if err != nil {
+			a.logger.Info("Invalid json recieved from client", err)
+			msg := Message{
+				StatusCode: 400,
+				Message:    "Unapropriate provided json",
+				IsError:    true,
+			}
+			writer.WriteHeader(400)
+			json.NewEncoder(writer).Encode(msg)
+			return
+		}
+	}
+	// Необходимо попытаться обнаружить пользователя с таким логин в бд
+	userInDB, ok, err := a.storage.User().FindByLogin(userFromJSON.Login)
+	// проблема доступа к БД
+	if err != nil {
+		a.logger.Info("Can not make user search in database")
+		msg := Message{
+			StatusCode: 500,
+			Message:    "We have some troubles while accessing databasse",
+			IsError:    true,
+		}
+		writer.WriteHeader(500)
+		json.NewEncoder(writer).Encode(msg)
+		return
+	}
+	// Если такого пользователя нет
+	if !ok {
+		a.logger.Info("Can not find user with that ID in database")
+		msg := Message{
+			StatusCode: 404,
+			Message:    "user with this id doesn't exist in database.",
+			IsError:    true,
+		}
+		writer.WriteHeader(400)
+		json.NewEncoder(writer).Encode(msg)
+		return
+	}
+	//проверим совпадает пароль юзера с пришедшим
+	if userInDB.Password != userFromJSON.Password {
+		a.logger.Info("Invalid credentials to auth")
+		msg := Message{
+			StatusCode: 404,
+			Message:    "Your password is invalid",
+			IsError:    true,
+		}
+		writer.WriteHeader(404)
+		json.NewEncoder(writer).Encode(msg)
+		return
+	}
+
+	//Теперь выбиваем токен как знак успешной аутентификации
+	token := jwt.New(jwt.SigningMethodHS256)             // Тот же метод подписания токена, что и в JWTMiddleware.go
+	claims := token.Claims.(jwt.MapClaims)               //дополнительные действия для шифрования
+	claims["exp"] = time.Now().Add(time.Hour * 2).Unix() //Время жизни токена
+	claims["name"] = userInDB.Login
+	claims["admin"] = true
+	tokenString, err := token.SignedString(middleware.SecretKey)
+	if err != nil {
+		a.logger.Info("Can not claim jwt-token")
+		msg := Message{
+			StatusCode: 500,
+			Message:    "We have some troubles. Try again",
+			IsError:    true,
+		}
+		writer.WriteHeader(500)
+		json.NewEncoder(writer).Encode(msg)
+		return
+	}
+	//В случае, если токен успешно выбит - отдаем его клинету
+	msg := Message{
+		StatusCode: 201,
+		Message:    tokenString,
 		IsError:    false,
 	}
 	writer.WriteHeader(201)

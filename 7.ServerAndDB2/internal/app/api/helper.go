@@ -2,8 +2,10 @@ package api
 
 import (
 	_ "github.com/gorilla/mux"
+	"github.com/k-airos/7.ServerAndDB2/internal/app/middleware"
 	storage "github.com/k-airos/7.ServerAndDB2/storage"
 	"github.com/sirupsen/logrus"
+	"net/http"
 )
 
 var (
@@ -23,10 +25,18 @@ func (a *API) configureLoggerField() error {
 //Пытаемся отконфигурировать маршрутизатор (поле router API)
 func (a *API) configureRouterField() {
 	a.router.HandleFunc(prefix+"/articles", a.GetAllArticles).Methods("GET")
-	a.router.HandleFunc(prefix+"/articles/{id}", a.GetArticleByID).Methods("GET")
+	// Было до JWT
+	//a.router.HandleFunc(prefix+"/articles/{id}", a.GetArticleByID).Methods("GET")
+	//Теперь требует наличия JWT
+	a.router.Handle(prefix+"/articles/{id}", middleware.JWTMiddleware.Handler(
+		http.HandlerFunc(a.GetArticleByID),
+	)).Methods("GET")
+	//
 	a.router.HandleFunc(prefix+"/articles/{id}", a.DeleteArticleByID).Methods("DELETE")
 	a.router.HandleFunc(prefix+"/articles", a.PostArticle).Methods("POST")
 	a.router.HandleFunc(prefix+"/user/register", a.PostUserRegister).Methods("POST")
+	//new pair for auth
+	a.router.HandleFunc(prefix+"/user/auth", a.PostToAuth).Methods("POST")
 }
 
 //Пытаемся отконфигурировать наше храниелище (storage API)
